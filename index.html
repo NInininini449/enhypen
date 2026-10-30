@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>吸血鬼恋爱记</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: "Noto Serif SC", "STSong", "SimSun", serif;
+    background:#0a0508;
+    color:#e8dcd6;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  /* 背景雾气 */
+  .fog {
+    position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:
+      radial-gradient(ellipse at 20% 80%, rgba(120,20,40,.18), transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(80,10,60,.15), transparent 60%),
+      radial-gradient(ellipse at 50% 50%, rgba(150,30,30,.05), transparent 70%);
+    animation:fogDrift 18s ease-in-out infinite alternate;
+  }
+  @keyframes fogDrift { from{opacity:.7; transform:scale(1);} to{opacity:1; transform:scale(1.06);} }
+  .bats span {
+    position:fixed; font-size:18px; opacity:.35; z-index:0; pointer-events:none;
+    animation:fly linear infinite;
+  }
+  @keyframes fly {
+    0% { transform:translate(-5vw, 10vh); }
+    50% { transform:translate(50vw, 30vh); }
+    100% { transform:translate(105vw, 5vh); }
+  }
+  .screen { display:none; position:relative; z-index:1; max-width:760px; margin:0 auto; padding:40px 20px 80px; min-height:100vh; }
+  .screen.active { display:block; animation:fadeIn .8s ease; }
+  @keyframes fadeIn { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+
+  .title-en { letter-spacing:.4em; text-transform:uppercase; font-size:12px; color:#8a6a72; text-align:center; margin-bottom:14px; }
+  h1.game-title {
+    text-align:center; font-size:52px; letter-spacing:.12em; font-weight:900;
+    background:linear-gradient(180deg,#f5e6e0 20%, #d4344f 55%, #6e0e1e 90%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 0 40px rgba(212,52,79,.25);
+    margin-bottom:16px;
+  }
+  .subtitle { text-align:center; font-size:16px; color:#b99aa2; font-style:italic; margin-bottom:8px; }
+  .divider { text-align:center; color:#6e0e1e; margin:26px 0; font-size:18px; letter-spacing:.5em; }
+  .center { text-align:center; }
+
+  .btn {
+    display:inline-block; padding:14px 52px; font-size:20px; letter-spacing:.3em;
+    background:linear-gradient(135deg,#3a0812,#6e0e1e);
+    color:#f3d9d9; border:1px solid #a4324a; border-radius:40px; cursor:pointer;
+    font-family:inherit; transition:.25s; box-shadow:0 0 24px rgba(164,50,74,.25), inset 0 0 12px rgba(0,0,0,.4);
+  }
+  .btn:hover { transform:translateY(-2px) scale(1.03); box-shadow:0 0 40px rgba(212,52,79,.5); background:linear-gradient(135deg,#5a0c1a,#92162a); }
+  .btn.small { padding:10px 30px; font-size:16px; }
+  .btn:disabled { opacity:.35; cursor:not-allowed; transform:none; }
+
+  h2.step-title { text-align:center; font-size:24px; color:#e9c9cd; margin:10px 0 6px; letter-spacing:.15em; }
+  p.step-hint { text-align:center; color:#8a6a72; font-size:13px; margin-bottom:26px; }
+
+  .mode-row { display:flex; gap:24px; justify-content:center; flex-wrap:wrap; margin-top:30px; }
+  .mode-card {
+    width:230px; padding:34px 20px; text-align:center; cursor:pointer;
+    background:rgba(30,8,14,.7); border:1px solid #4a1420; border-radius:16px; transition:.25s;
+  }
+  .mode-card:hover, .mode-card.selected { border-color:#d4344f; box-shadow:0 0 30px rgba(212,52,79,.35); transform:translateY(-4px); background:rgba(60,12,24,.8); }
+  .mode-card .icon { font-size:44px; margin-bottom:12px; }
+  .mode-card h3 { color:#f0d4d8; margin-bottom:8px; letter-spacing:.2em; }
+  .mode-card p { font-size:13px; color:#9c7c84; line-height:1.6; }
+
+  .count-row { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin:24px 0; }
+  .count-chip {
+    padding:10px 26px; border:1px solid #4a1420; border-radius:30px; cursor:pointer;
+    color:#c9a6ad; font-size:16px; transition:.2s; background:rgba(30,8,14,.6);
+  }
+  .count-chip:hover, .count-chip.selected { border-color:#d4344f; color:#fff; background:#5a0c1a; }
+
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:20px; }
+  @media (max-width:560px){ .grid{grid-template-columns:repeat(2,1fr);} }
+  .member-card {
+    padding:20px 12px; text-align:center; cursor:pointer; border-radius:14px;
+    background:rgba(30,8,14,.7); border:1px solid #4a1420; transition:.25s; position:relative;
+  }
+  .member-card:hover { transform:translateY(-3px); border-color:#a4324a; }
+  .member-card.selected { border-color:#d4344f; background:rgba(70,14,26,.85); box-shadow:0 0 22px rgba(212,52,79,.3); }
+  .member-card.selected::after { content:"✦"; position:absolute; top:8px; right:12px; color:#d4344f; }
+  .avatar {
+    width:64px; height:64px; margin:0 auto 10px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:26px; font-weight:bold; color:#1a0508;
+  }
+  .member-card h3 { font-size:18px; color:#f0d4d8; margin-bottom:4px; letter-spacing:.1em; }
+  .member-card p { font-size:12px; color:#9c7c84; line-height:1.5; }
+
+  .scene-list { display:flex; flex-direction:column; gap:14px; margin-top:24px; }
+  .scene-card {
+    display:flex; align-items:center; gap:18px; padding:18px 22px; cursor:pointer;
+    background:rgba(30,8,14,.7); border:1px solid #4a1420; border-radius:14px; transition:.25s;
+  }
+  .scene-card:hover, .scene-card.selected { border-color:#d4344f; background:rgba(60,12,24,.8); transform:translateX(6px); }
+  .scene-card .icon { font-size:34px; }
+  .scene-card h3 { color:#f0d4d8; font-size:18px; margin-bottom:4px; }
+  .scene-card p { font-size:13px; color:#9c7c84; }
+
+  .actions { text-align:center; margin-top:34px; }
+  .actions .btn { margin:0 8px; }
+
+  /* 故事页 */
+  .story-bg {
+    border-radius:18px; padding:30px 26px; margin-bottom:22px; position:relative; overflow:hidden;
+    border:1px solid #4a1420; background:rgba(30,8,14,.75);
+  }
+  .story-bg h3 { color:#d4344f; letter-spacing:.2em; margin-bottom:12px; font-size:15px; }
+  .story-bg .scene-art { font-size:40px; text-align:center; margin-bottom:14px; filter:drop-shadow(0 0 12px rgba(212,52,79,.4)); }
+  .narrative { font-size:16px; line-height:2.1; color:#e0c8cc; text-indent:2em; }
+  .narrative + .narrative { margin-top:10px; }
+  .who { color:#f0a6b4; font-weight:bold; }
+
+  .progress-wrap { display:flex; align-items:center; gap:10px; margin:24px 0 18px; }
+  .progress-track { flex:1; height:6px; background:#2a0a12; border-radius:6px; overflow:hidden; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,#6e0e1e,#d4344f); width:0%; transition:width .6s; border-radius:6px; }
+  .progress-label { font-size:12px; color:#8a6a72; letter-spacing:.1em; white-space:nowrap; }
+
+  .question-box { animation:fadeIn .6s ease; }
+  .question-box h3 { font-size:19px; color:#f5e6e0; margin-bottom:18px; line-height:1.7; }
+  .choice {
+    display:block; width:100%; text-align:left; padding:15px 20px; margin-bottom:12px;
+    background:rgba(30,8,14,.7); border:1px solid #4a1420; border-radius:12px; cursor:pointer;
+    color:#d8bcc0; font-size:15px; font-family:inherit; line-height:1.7; transition:.2s;
+  }
+  .choice:hover { border-color:#d4344f; background:rgba(70,14,26,.75); color:#fff; transform:translateX(6px); }
+  .choice .tag { color:#a4324a; margin-right:8px; }
+
+  /* 结局 */
+  .ending-card { text-align:center; padding:50px 20px; }
+  .ending-badge { font-size:20px; letter-spacing:.5em; margin-bottom:20px; display:inline-block; padding:8px 30px; border-radius:30px; }
+  .ending-badge.he { color:#ffd7a0; border:1px solid #c98a3a; background:rgba(120,70,10,.25); box-shadow:0 0 30px rgba(255,180,80,.2); }
+  .ending-badge.be { color:#c8b6ff; border:1px solid #6a5acd; background:rgba(50,30,110,.25); box-shadow:0 0 30px rgba(120,100,255,.2); }
+  .ending-badge.tw { color:#a8f0c8; border:1px solid #3a9a5a; background:rgba(20,80,50,.25); box-shadow:0 0 30px rgba(80,255,160,.15); }
+  .ending-title { font-size:30px; margin:18px 0; letter-spacing:.15em; color:#f5e6e0; }
+  .ending-text { text-align:left; font-size:16px; line-height:2.2; color:#e0c8cc; text-indent:2em; background:rgba(30,8,14,.7); border:1px solid #4a1420; border-radius:16px; padding:26px; }
+  .ending-quote { margin-top:22px; color:#a4324a; font-style:italic; font-size:15px; letter-spacing:.1em; }
+  .blood-drop { font-size:44px; animation:pulse 2s infinite; display:inline-block; }
+  @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.2);} }
+</style>
+</head>
+<body>
+<div class="fog"></div>
+<div class="bats">
+  <span style="animation-duration:22s; top:5%;">🦇</span>
+  <span style="animation-duration:30s; top:18%; animation-delay:-10s;">🦇</span>
+  <span style="animation-duration:26s; top:40%; animation-delay:-4s;">🦇</span>
+  <span style="animation-duration:34s; top:65%; animation-delay:-15s;">🦇</span>
+</div>
+
+<!-- 封面 -->
+<section id="screen-title" class="screen active">
+  <div style="margin-top:8vh;">
+    <div class="title-en">Midnight Blood Pact</div>
+    <h1 class="game-title">吸血鬼恋爱记</h1>
+    <p class="subtitle">—— 你想和 ENHYPEN 上演什么爱情故事？——</p>
+    <div class="divider">✦ ✦ ✦</div>
+    <div class="center">
+      <p style="color:#8a6a72; font-size:14px; line-height:2; margin-bottom:40px;">
+        午夜的钟声敲响第十三下，<br>
+        六位不朽的绅士正在等待一份迟到了一百年的邀请函。<br>
+        而收件人，是你。
+      </p>
+      <button class="btn" onclick="go('screen-mode')">开 始</button>
+    </div>
+  </div>
+</section>
+
+<!-- 模式选择 -->
+<section id="screen-mode" class="screen">
+  <h2 class="step-title">第一章 · 选择你的命运形态</h2>
+  <p class="step-hint">这场午夜之约，是一个人的心跳，还是众人的共谋？</p>
+  <div class="mode-row">
+    <div class="mode-card" onclick="pickMode('single')">
+      <div class="icon">🩸</div>
+      <h3>单人模式</h3>
+      <p>锁定一位成员，<br>展开一段专属于你们的<br>一对一吸血罗曼史</p>
+    </div>
+    <div class="mode-card" onclick="pickMode('multi')">
+      <div class="icon">🕯️</div>
+      <h3>多人模式</h3>
+      <p>与两位以上成员同行，<br>在众人的注视与暗流中，<br>寻找唯一的出口</p>
+    </div>
+  </div>
+</section>
+
+<!-- 人数选择 -->
+<section id="screen-count" class="screen">
+  <h2 class="step-title">第二章 · 夜有多长，伴就有几人</h2>
+  <p class="step-hint">你想让几位吸血鬼绅士加入这场邀约？</p>
+  <div class="count-row" id="count-row"></div>
+  <div class="actions"><button class="btn small" onclick="go('screen-mode')">← 返回</button></div>
+</section>
+
+<!-- 成员选择 -->
+<section id="screen-members" class="screen">
+  <h2 class="step-title" id="member-title">第三章 · 选择与你共度永夜之人</h2>
+  <p class="step-hint" id="member-hint"></p>
+  <div class="grid" id="member-grid"></div>
+  <div class="actions">
+    <button class="btn small" onclick="go('screen-mode')">← 返回</button>
+    <button class="btn small" id="member-next" onclick="go('screen-scene')" disabled>下一步 →</button>
+  </div>
+</section>
+
+<!-- 场景选择 -->
+<section id="screen-scene" class="screen">
+  <h2 class="step-title">第四章 · 故事将在何处苏醒</h2>
+  <p class="step-hint">每一个地点，都埋着一百年的秘密。</p>
+  <div class="scene-list" id="scene-list"></div>
+</section>
+
+<!-- 故事页 -->
+<section id="screen-story" class="screen">
+  <div class="story-bg">
+    <h3 id="story-scene-name"></h3>
+    <div class="scene-art" id="story-scene-art"></div>
+    <div id="story-opening"></div>
+  </div>
+  <div class="progress-wrap">
+    <span class="progress-label">命运 <span id="round-num">1</span>/4</span>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <span class="progress-label">🩸 血契值 <span id="score-num">0</span></span>
+  </div>
+  <div class="question-box" id="question-box"></div>
+</section>
+
+<!-- 结局页 -->
+<section id="screen-ending" class="screen">
+  <div class="ending-card">
+    <div id="ending-badge" class="ending-badge"></div>
+    <div class="blood-drop">🩸</div>
+    <div class="ending-title" id="ending-title"></div>
+    <div class="ending-text" id="ending-text"></div>
+    <div class="ending-quote" id="ending-quote"></div>
+    <div class="actions" style="margin-top:36px;">
+      <button class="btn small" onclick="restart()">↺ 重新开始这段永夜</button>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ===================== 数据 ===================== */
+const MEMBERS = [
+  { id:"jungwon",  name:"梁祯元", initial:"WON", color:"#7ac95a", trait:"最年幼的族长 · 外表是猫系少年，掌管整座血族城市" },
+  { id:"niki",     name:"西村力", initial:"NI-KI", color:"#e0b13a", trait:"夜行舞者 · 血族中最年幼的'末裔'，舞步比月光还要快" },
+  { id:"jay",      name:"朴综星", initial:"JAY", color:"#8a4ac9", trait:"古董钟表匠 · 能修好任何钟，除了他自己的心跳" },
+  { id:"jake",     name:"沈载伦", initial:"JAKE", color:"#3a8ac9", trait:"狼血混血儿 · 微笑时犬齿会不受控制地变长" },
+  { id:"sunghoon", name:"朴成训", initial:"HOON", color:"#5ac9c9", trait:"冰之贵族 · 一百岁，却像永远十七岁的花样滑冰者" },
+  { id:"sunoo",    name:"金善禹", initial:"SUN", color:"#e86a9a", trait:"日行者的秘密 · 唯一敢在正午出门的悖论" },
+];
+
+const SCENES = [
+  { id:"office", name:"午夜办公室", icon:"🏢", art:"🏢🌙🩸", desc:"凌晨一点的顶层办公室，加班的你收到了一封没有发件人的会议邀请——主题：'永生'。",
+    bg:(names)=>`凌晨一点零三分。整层写字楼的灯只剩你头顶那一盏。你揉着酸胀的眼睛去打印文件，打印机却吐出一封烫金请柬：<b>「诚邀您参加凌晨一点的'永生'主题会议。——ENHYPEN 特别项目组」</b>。会议室的门缝里渗出深红色的雾，门后传来椅子转动的轻响。${names}正等在那里，六双（或一双）眼睛在黑暗里亮起，像雪地里的红宝石。` },
+  { id:"classroom", name:"旧校舍教室", icon:"🏫", art:"🏫🕯️📚", desc:"传说里被封锁的旧校舍三楼教室。黑板上留着一行没人敢擦掉的字：'还有三天，我就来找你'。",
+    bg:(names)=>`旧校舍三楼，传说中封印了半个世纪的教室。你只是来取落在体育课的外套，推开门——粉笔灰在月光里悬浮成星河，黑板上用血色的字写着：${names}的名字，和你的名字，被同一颗心形圈在一起。身后，门"咔哒"一声自己锁上了。<span class="who">${names}</span>从座位上站起身，动作整齐得像排练过一百次：「欢迎回来。我们等你，等了整整五十年。」` },
+  { id:"hospital", name:"血库医院", icon:"🏥", art:"🏥💉🌑", desc:"你在血站做夜班志愿者。这个月，冷藏柜里的血袋总是以奇怪的规律减少——每晚恰好六袋。",
+    bg:(names)=>`你是市立血站的夜班志愿者。这个月有个诡异的规律：冷藏柜每晚恰好消失六袋血，监控里永远只有一阵黑雾。今晚，你决定留下来蹲守。零点整，冰柜门无声滑开，你冲过去——撞进六道（或一道）苍白的身影里。<span class="who">${names}</span>抱着血袋回头，嘴角还挂着一点猩红，表情像被逮到的孩子：「……我们可以解释。」停顿两秒。「算了，解释不了。但你要不要听一个更刺激的版本？」` },
+  { id:"ballroom", name:"古堡舞会", icon:"🏰", art:"🏰🕯️🎻", desc:"一封烫金舞会邀请函凭空出现在你的口袋里。古堡的舞池上，永远只点着十三根蜡烛。",
+    bg:(names)=>`你从没寄出过回执，可这封烫金邀请函就躺在你口袋里：<b>「诚挚恭候您的光临 —— 第两百一十三届血月舞会」</b>。你循着地址走到城郊，那里根本没有古堡——直到钟声敲响十三下，浓雾散开，一座黑色城堡从月光里浮现。舞池中央，<span class="who">${names}</span>朝你伸出手，十三根蜡烛同时爆出灯花：「第一百次了。前九十九次你都没有来——但这一次，命运终于把门推开了。」` },
+  { id:"rooftop", name:"雨夜天台", icon:"🌧️", art:"🌧️🌆🦇", desc:"暴雨的深夜天台，一个据说能实现愿望的都市传说：对着雨许愿，吸血鬼会替你完成——但代价不明。",
+    bg:(names)=>`都市传说是这样讲的：暴雨夜的天台上，对着雨说出愿望，就会有吸血鬼来替你完成——代价未知，契约不退。你本来不信，直到今晚加班到崩溃，你真的爬上了天台，对着瓢泼大雨吼了一句：「我想逃离这一切！」雨声戛然而止。<span class="who">${names}</span>撑着一把黑伞站在你身后，伞沿滴下的却是深红色的水珠：「愿望收到。不过合同条款有点多——你确定不看细则就签字吗？……人类真是，一点都不吸取教训。」` },
+];
+
+/* 每个场景 4 道互动题，每题 3 个选项 */
+const QUESTIONS = {
+  office: [
+    { q:"会议大屏亮起，议题只有一行字：「如何处置桌上这位唯一的活人」。你决定——",
+      opts:[
+        { t:"主动翻开会议记录，说：「与其讨论处置我，不如讨论怎么让我签合同。」", s:3, r:"会议室的空气凝固了一秒，随后响起掌声。综星把手表推到你面前——表针停在凌晨一点，背面刻着你的名字。" },
+        { t:"假装镇定地给全员倒咖啡，试图用人类的礼节拖延时间。", s:1, r:"成训接过咖啡抿了一口，表情微妙：「……这是血袋。」但你冷静的样子让他们都笑了，杀气悄然化开。" },
+        { t:"夺门而逃。反正电梯——为什么电梯里也站着他们？！", s:-1, r:"电梯镜面里，他们的倒影消失了，你的却有两个。其中一个倒影对你眨了眨眼。" }
+      ]},
+    { q:"力递来一份《永生雇佣合同》，末页签名栏已经预填了你的名字，笔迹和你的一模一样。",
+      opts:[
+        { t:"签名，但故意把名字写错一个字——「这样契约就有漏洞了，对吧？」", s:3, r:"力愣住，随即笑出声，眼底泛红：「一百年了，终于有人读懂条款。族里早就想找你了——契约律师小姐/先生。」" },
+        { t:"指着「无限期」三个字要求改成「试用期三个月」。", s:2, r:"祯元托腮想了想：「可以。但试用期内你要负责我们六个的晨间叫醒——哦对，我们起不来，是夕阳叫醒。" },
+        { t:"把合同折成纸飞机从窗户飞出去。", s:0, r:"纸飞机在夜空中转了个弯，飞回你的桌面，展开后多了一行小字：「已阅。同意。——全楼 electromagnetic 监控您的人」" }
+      ]},
+    { q:"加班夜宵时间，善禹捧出一个便当盒，里面是六枚戒指。他说这是「入职体检」。",
+      opts:[
+        { t:"逐个试戴，戴到哪枚发光就选哪枚。", s:2, r:"第四枚戒指上你的指纹亮起红光。善禹欢呼：「冰之血脉的候补！成训哥快看，又捡到一个！」" },
+        { t:"反问：「体检报告出来前，我能不能先知道上一位戴这戒指的人去哪了？」", s:3, r:"气氛瞬间冷了三度。载伦小声说：「他现在……就坐在你对面。我只是换了发型。」你缓缓转头，对面空无一人。" },
+        { t:"把六枚戒指都戴满十根手指，宣布：「我全都要。」", s:1, r:"六人面面相觑。祯元憋笑憋到肩膀发抖：「族规说……这样的先例只有一位。就是我们永远的第七人。" }
+      ]},
+    { q:"清晨将至，晨光是吸血鬼的天敌。但你发现他们六个没有一个人准备离开，全都站在你工位旁。",
+      opts:[
+        { t:"拉上全部窗帘，把会议室改造成紧急避难所：「都进来，今天我罩着你们。」", s:3, r:"晨光被窗帘隔绝。黑暗里，六个人影同时把你围在中间。综星的声音很轻：「你知不知道，这句话我们等了一百年。」" },
+        { t:"假装冷静地说：「我先走了，你们……注意防晒。」落荒而逃。", s:0, r:"跑出大楼时，保安大叔幽幽地说：「姑娘/先生，这栋楼的窗帘，昨晚就全坏光了呀。」你回头——顶层六扇窗后，六个身影正在窗边目送你。" },
+        { t:"站在窗边张开双臂挡住晨光：「想晒到他们，先晒化我。」", s:2, r:"晨光穿过你的身体时没有造成任何伤害——因为这一刻，你的影子悄悄替你挡住了全部阳光。你的影子，好像有点不对劲。" }
+      ]}
+  ],
+  classroom: [
+    { q:"黑板上你的名字旁边，计数从「还有三天」跳成了「还有两小时」。粉笔自己动了起来。",
+      opts:[
+        { t:"抓起粉笔在旁边写下：「改主意了，改成永远。」", s:3, r:"粉笔在「永远」两个字上停顿了很久，教室里响起一声极轻的、像是叹息的笑。黑板簌簌落下粉笔灰，聚成一只蝴蝶。" },
+        { t:"掏出手机拍照存证——闪光灯亮起的瞬间，照片里多了七个影子。", s:1, r:"你数了数，七个人，六个你应该认识的背影。第七个影子的发型……和你一模一样。" },
+        { t:"用袖子去擦名字。擦到一半，一只冰凉的手覆上你的手背：「别擦。这是我的求婚书。」", s:2, r:"成训的耳尖泛着薄红。一百岁的贵族，在黑板前紧张得像十七岁。" }
+      ]},
+    { q:"他们提出玩一个「五十年前的旧游戏」：击鼓传花，鼓声停止时花在谁手里，谁就要回答一个真心话。",
+      opts:[
+        { t:"接住花，第一个抢答：「我先来。五十年前，你们在等的那个人，是我吗？」", s:3, r:"教室安静得能听见尘埃落地。祯元低下头，声音很轻：「……你终于想起来了。你一直问我们，却从没问过你自己。" },
+        { t:"把花传回去：「我不玩必输的游戏。」花却在空中停住了，悬在你们中间。", s:1, r:"花悬停在半空，缓缓旋转。载伦挠头：「呃……花说它想听听你的真心话再决定落谁手里。" },
+        { t:"故意把花塞给最年幼的祯元：「族长先来。」", s:2, r:"祯元抱着花愣了两秒，然后笑弯了眼：「……五十年了，第一次有人敢把花塞给我。你完了，也可能，你是唯一安全的人。" }
+      ]},
+    { q:"午休铃响起。阳光从窗户斜切进来，正照在他们六个人身上——但他们的皮肤毫无变化。善禹得意地朝你扬眉。",
+      opts:[
+        { t:"凑近善禹，盯着他的皮肤看：「所以你的秘密到底是什么？说来听听，我保密。」", s:3, r:"善禹凑到你耳边，气声：「其实……我们六个里，只有我是人类。他们留我在这儿，是因为五十年前，是他们把我咬了一半又后悔了。" },
+        { t:"搬椅子坐到阳光里，和他们并排晒太阳：「一起怕什么。」", s:2, r:"阳光落在你们中间。成训忽然说：「上一次有人愿意和我们坐在一起晒太阳，是五十年前的今天。" },
+        { t:"默默后退到阴影里——直觉告诉你，知道太多的人活不长。", s:0, r:"你退进阴影的那一刻，教室里所有的影子都齐刷刷转向了你。连他们的影子，都在看你。" }
+      ]},
+    { q:"放学钟声敲响。教室的门开了，门外却不是走廊，而是一条通往校门口的、五十年前的旧走廊。",
+      opts:[
+        { t:"牵住离你最近的那只手：「一起走。时间走廊一个人走太亏了。」", s:3, r:"你牵住的手在微微发抖。走廊尽头的光越来越亮，他们的低语混在风里：「……就这样，再也不要放开。" },
+        { t:"独自走进门：「如果门外是陷阱，至少不能全灭。」", s:1, r:"你独自走了进去。身后传来六个人异口同声的、咬牙切齿的声音：「跟上去！这家伙怎么比我们还逞强！" },
+        { t:"站在门槛上回头问：「五十年前，你们没走出这扇门的原因，是什么？」", s:2, r:"综星沉默了很久：「因为有人说了'你先走，我随后就来'。我们等了五十年，等的就是把这句话还给你。" }
+      ]}
+  ],
+  hospital: [
+    { q:"你举起手电筒照向他们：「偷血可以，但请把账结了——这个月的电费。」",
+      opts:[
+        { t:"掏出账单，一本正经地念：「血袋六袋，加急费、冷藏费、监控维修费……合计：请回答我一个问题。」", s:3, r:"六个人愣住，然后祯元憋不住笑了：「可以。你问。」——这是你第一次，在游戏里占据绝对主动权。" },
+        { t:"打开冰柜：「别偷了，我送你们。但我也要一个交换条件。」", s:2, r:"载伦眨眨眼：「你确定要和吸血鬼做交换？……行吧。条件是：从今晚起，每晚六袋，我们亲自来取，顺便看你下班。" },
+        { t:"吹响口哨叫保安——吹了三声，走廊里走出来的是……他们六个的另一半分身。", s:0, r:"原来血站的「夜班全员」，一半都是他们的族人。你被「礼貌地」请进了院长办公室——桌上摆着你的入职申请，签名日期是一百年前。" }
+      ]},
+    { q:"力提议做一次「血型检测」——但仪器不是医院的，是一枚刻着古老纹章的银针。",
+      opts:[
+        { t:"主动伸出手：「扎吧。但我警告你们，如果结果显示我是天选之子，你们得跪。」", s:3, r:"银针刺入的瞬间，纹章亮起七角星光。六个人真的——齐刷刷单膝跪地。善禹仰头，眼睛亮晶晶：「终于……终于找到了。" },
+        { t:"抢过银针反手扎向离你最近的成训：「双向检测才公平。」", s:2, r:"成训的血滴上纹章，纹章亮起了冰蓝色——然后你的血溅上去时，蓝色变成了从未有过的银白色。仪器「哔」的一声，当场烧毁。" },
+        { t:"把银针收进口袋：「想验血？先签知情同意书。我是志愿者，我懂流程。」", s:1, r:"六个人凑在一起小声商量了五分钟，然后递给你一份墨水还没干的、落款是1887年的《知情同意书》。" }
+      ]},
+    { q:"凌晨三点，医院停电了。应急灯全灭的走廊里，只有他们的眼睛在发光，像六盏猩红的路灯。",
+      opts:[
+        { t:"打开手机手电筒照自己：「别用自带光源了，费眼睛。跟我来，配电室在三楼。」", s:2, r:"他们排成一列跟在你身后，像一群夜行的猫。走到一半，身后传来祯元小小的声音：「……其实电闸是我们拉的。" },
+        { t:"站在原地大喊：「停电也不许趁乱亲我！我数到三！一——」", s:1, r:"「二」还没出口，黑暗里响起六声整齐的、忍着笑的咳嗽声。但你的脸颊上，确实有一个冰凉的、快得像错觉的触碰。" },
+        { t:"闭上眼睛，凭心跳的方位辨认他们：「一、二、三……你们六个，呼吸都是假的，心跳也忘了模拟吧？」", s:3, r:"黑暗中响起一声真心的惊呼。综星的声音里带着笑：「这家伙……我们藏了一百年的破绽，被她/他三秒听穿了。" }
+      ]},
+    { q:"天快亮了。他们必须回到地下血库，否则晨光会把他们晒成灰。可电梯坏了。",
+      opts:[
+        { t:"把自己的外套和工牌全给他们：「走员工楼梯，就说是我带的实习生。晨光我来挡。」", s:3, r:"晨光中，你张开手臂挡在楼梯口。光穿过你的影子时，影子忽然变大了六倍——把六个人整个罩住。你的影子在保护他们。" },
+        { t:"冲进值班室拖出六张遮光布，现场搭起「移动棺材帐篷」。", s:2, r:"六个人钻进帐篷，挤成一团。帐篷里传出善禹的声音：「其实……我们真的有一具移动棺材。但这个帐篷更暖和。" },
+        { t:"幽幽地说：「不急。反正你们不是有分身吗？让分身来抬。」", s:1, r:"话音刚落，走廊尽头走出六个一模一样的人影，整齐划一地鞠躬：「遵命。」——等等，他们真的有分身？！现在你有十二个追踪者了。" }
+      ]}
+  ],
+  ballroom: [
+    { q:"舞会开场，按血族古礼，你将跳第一支舞。六个人同时伸出了手。",
+      opts:[
+        { t:"把手背到身后：「第一支舞，我要和'第两百一十三届舞会'本身跳。也就是说——你们六个，一起。」", s:3, r:"十三根蜡烛同时爆出金色的灯花。管弦乐队屏息片刻，奏响了一首从未有过的圆舞曲——六人围着你，舞池变成了盛大的漩涡。" },
+        { t:"指向成训：「冰之贵族。听说你滑冰——那跳舞应该不会踩我的脚吧？」", s:2, r:"成训伸出手，指尖微凉。整支舞里，你们像在月光冰面上滑行。结束时他耳尖通红：「……一百年了，第一次有人主动选我。" },
+        { t:"反手拉过侍者端来的托盘当舞伴：「我社恐。它不呼吸，也不会问让人尴尬的问题。」", s:1, r:"全场死寂三秒，随后善禹笑到跌坐在台阶上。族长祯元扶额：「族史记下来——第两百一十三届舞会，第一支舞的舞伴是银盘。" }
+      ]},
+    { q:"舞会中场，综星给你看了一样东西：一座怀表，表盖里嵌着一幅迷你画像——画中人的脸，是你的。",
+      opts:[
+        { t:"「画师是谁？我要给他加钱——画得比自拍好。」", s:1, r:"综星盯着你看了很久，忽然笑了：「画师是一百年前的一位客人。她/他画完这张像的第二天，就再也不记得这里了。" },
+        { t:"打开表盖背面——背面还有一行小字，是你的笔迹：「下一次，换我记住你们。」", s:3, r:"你自己的字迹，落款日期是一百年前的今天。你的太阳穴骤然刺痛——某个被封印的记忆，正在苏醒。" },
+        { t:"合上表盖：「这种定情信物，是不是应该先告白再送？流程呢？」", s:2, r:"综星的耳尖瞬间红透，手指绞着怀表链：「这、这不是定情信物！这是……遗物……啊不对，这个说法更糟糕——" }
+      ]},
+    { q:"午夜十二点，所有客人的面具升到半空悬停——这是血族的「真心时刻」，接下来一小时内，所有人都无法说谎。",
+      opts:[
+        { t:"先发制人：「我先来。我今晚来，其实是想逃票进古堡看藏书室的。」", s:1, r:"全员噗嗤笑出声。祯元大手一挥：「藏书室开放！条件是——你欠我们六个'真心话'，明年今日来还。" },
+        { t:"看着他们六个：「那么请回答——如果我只能记得今晚一晚，你们还会让我来吗？」", s:3, r:"六个声音同时响起，整齐得像排练过一百遍：「会。」「会。」「会。」「会。」「会。」「会。」烛火为这句话，齐齐弯了腰。" },
+        { t:"保持沉默，微笑着举杯——真心时刻里，沉默也是一种回答。", s:2, r:"真言时刻的规则反噬了他们：六个人不受控制地同时说出心里话——「想让你留下」。你手中的酒杯，映出你藏起来的心动。" }
+      ]},
+    { q:"舞会终章，古老的仪式开始：选择离开的人将在清晨忘记一切；选择留下的人将获得永生——但代价是，从此只能在夜里相见。",
+      opts:[
+        { t:"「我选第三个选项：我留下，但我保留白天。规则是死的，我们是活的——我们一起改。」", s:3, r:"烛火同时熄灭，又同时亮起——变成了白色。族长祯元的声音里带着颤抖的笑：「血脉确认。仪式通过。从今夜起，血族有了新的规则——和你。" },
+        { t:"「我离开。但你们要答应我，明年的第两百一十四届，请柬还寄到我家。」", s:2, r:"清晨，你在自家床上醒来，什么都不记得。只有口袋里多了一张第两百一十四届舞会的请柬——日期，就是明天。" },
+        { t:"「我选留下——但不是为了永生。是为了问清楚：五十年前的那笔账，到底谁欠谁的？」", s:1, r:"烛火摇曳。综星缓缓摘下手套，露出掌心一道早已不再愈合的旧伤：「是那个人欠你的。是——一百年前的你，欠你的。」" }
+      ]}
+  ],
+  rooftop: [
+    { q:"合同凭空出现在雨中，条款密密麻麻。唯一清晰的一行是：「乙方（你）需在雨天随叫随到。」",
+      opts:[
+        { t:"掏出笔：「可以。但我加一条补充协议：甲方（你们六个）下雨天必须给我送伞。迟到一次，永生作废。」", s:3, r:"合同在雨中燃烧成金色的灰烬，又重组为新的契约。力笑出声：「第一次有人反过来给吸血鬼定违约金。成交。" },
+        { t:"「随叫随到可以。但你们六个的迟到记录我先查一下。」——合同自动翻到附录：迟到999次。", s:2, r:"六个人齐刷刷移开视线。善禹小声辩解：「那是因为……下雨天我们白天出不来……" },
+        { t:"把合同折成纸船放进积水里：「许愿应该免费。这是天台的规矩。」", s:1, r:"纸船漂出三米远，被一只苍白的手捞起。合同背面多了一行字：「规矩可以商量。但船费六袋血，记账上。" }
+      ]},
+    { q:"雨越下越大。载伦的犬齿在雨里渐渐变长——狼血在月雨之夜会失控。他背过身去：「别看我。」",
+      opts:[
+        { t:"撑着伞走到他面前，把伞举到他头上：「看我才不会失控。不看才会。」", s:3, r:"雨伞下，载伦的红瞳慢慢恢复成琥珀色。他哑着嗓子笑了：「……你知道吗，狼人被驯服的方式，就是有人愿意站在他獠牙够不到又最近的地方。" },
+        { t:"转身面对他们其他人：「你们谁有镇定剂？没有的话，我去血库拿——反正你们也是常客。」", s:2, r:"全场愣了两秒，然后爆发出大笑。笑到最后，载伦的犬齿不知不觉缩了回去——比起药，熟悉的声音更好用。" },
+        { t:"脱下外套盖在他头上：「数到十，你就是Jake，不是狼。一、二……」", s:1, r:"数到七的时候，外套下传来瓮声瓮气的声音：「……十了没？我爪子要戳破外套了。」你没忍住笑场，气氛融化了。" }
+      ]},
+    { q:"祯元忽然收起伞，任凭暴雨淋透自己，神情是与你年龄不符的疲惫：「一百年了。你有没有想过，为什么愿望是你来许？」",
+      opts:[
+        { t:"「因为传说是我编的。一百年前。」——话一出口，你自己也愣住了。", s:3, r:"雨停了。不是渐渐停的，是瞬间停的。全城的雨云在你头顶散开，月光落在六个人震惊的脸上。你的记忆封条，裂开了一道缝。" },
+        { t:"「不知道。但如果你这么累，愿望分你一半——你的那个，也说出来听听。」", s:2, r:"祯元看着你，看了很久很久，然后极轻地说：「我的愿望是——这次的雨季，结束的时候，你还在。」" },
+        { t:"「因为我是今晚唯一加班到崩溃、顺路爬天台的社畜。纯属倒霉。」", s:1, r:"六个人沉默地交换了一个眼神。力咳嗽一声：「……对，纯属倒霉。完全不是我们统计了三个月你的加班时间、选在你最崩溃的那天施法降雨。」" }
+      ]},
+    { q:"黎明将至，雨后的云缝里渗出第一缕晨光。吸血鬼们该走了——但天台的门，不知何时锁上了。",
+      opts:[
+        { t:"「都别慌。门锁了是吧？」你掏出手机——「我是这栋楼的物业投诉榜首。维修师傅的号码我有六个。」", s:2, r:"六个人看着你熟练地打电话、砍价、威胁给差评，十五分钟后维修师傅真的来了。善禹星星眼：「人类社会的力量……好可怕。" },
+        { t:"张开手臂站在晨光来的方向：「想晒到他们，先晒化我。」", s:3, r:"晨光穿过你的影子时，影子暴涨成六倍的巨大，把六个人严严实实罩住。那一刻，你的左眼在光里闪过一瞬猩红——你体内沉睡的东西，动了一下。" },
+        { t:"叹气，从包里掏出六把折叠伞、六件防晒衣、六副墨镜：「我就知道。全副武装，跑步前进，目标地下室，出发！」", s:1, r:"六个人顶着全套防晒装备冲下天台的样子，成了这栋写字楼流传百年的都市传说。虽然传说里，没人在乎他们为什么怕太阳。" }
+      ]}
+  ]
+};
+
+/* 结局池：he / be / twist（中立惊喜） */
+const ENDINGS = {
+  he: [
+    { title:"HE · 第七枚指纹", text:()=>`故事结束的方式出乎所有人意料：这根本不是他们布下的猎爱陷阱，而是他们排练了一百年的、一场笨拙的告白。<p><br>真相在最后一刻揭晓——血族的古卷上有一页空白，预言中写着：当"第七人"自愿留下指纹，被封印百年的诅咒将解开。而那枚指纹，从始至终只缺你的。<p><br>你的指尖落在古卷上的瞬间，${MEMBER_NAMES}身上的诅咒如晨雾般消散——他们获得的不是永恒的夜晚，而是重新拥有白天的权利。古卷合拢时，扉页浮现出你从不知道的署名：第七人，即"让永夜之人重新见到日出者"。<p><br>从此血族的史书上多了一行字：「他们六个用一百年，等来了一场日出。」`,
+      quote:"「我们数过一万次日出——但只有和你一起的这一次，算数。」" },
+    { title:"HE · 银血觉醒", text:()=>`你以为结局是你被咬，从此加入他们的永夜——但咬下去的瞬间，崩坏的却是"规则"本身。<p><br>你的血是传说中的"银血"：不但不能被转化，反而会中和吸血鬼的诅咒。也就是说——你根本咬不死你，你只会治好他们。${MEMBER_NAMES}被你的血液唤醒了沉睡百年的心跳，第一个恢复心跳的成训当场哭了出来，被载伦拍照做成表情包，珍藏至今。<p><br>最终你们达成了史上最奇怪的共生：你每周捐一次血，换六个吸血鬼一个星期的心跳。他们的族医管这叫治疗，你自己心里清楚——这叫恋爱。<p><br>哦对了，银血的副作用是：你也获得了不老的体质。所以这不是什么人鬼殊途的悲剧，是无限期的、两个人（加四个电灯泡）的以后。`,
+      quote:"「以前我喝血是为了活着。现在是为了记住心跳的形状。」" },
+    { title:"HE · 怀表里的第十三下", text:()=>`钟声敲到第十三下时，一切戛然而止。你在自己的床上醒来，窗外阳光刺眼，昨晚的一切像一场过于逼真的梦。<p><br>直到你洗漱时，发现枕边多了一座古董怀表。表盖里嵌着你的照片——摄于整整一百年前。照片背面的笔迹你已经认出来了：那是${MEMBER_NAMES}七个人共同的签名，和一行小字：<p><br>「第三百六十五次轮回成功。记忆封印解除倒计时：3，2，1——」<p><br>记忆如潮水涌回。原来这一晚你已经和他们重演了三百六十四次：每次结局，你都会忘记，他们就把关键道具藏进下一个轮回。这是他们第一次把怀表交给你——因为这一次，你终于说了那句让轮回停止的话：「这次，换我来记住你们。」<p><br>门铃响了。门外站着六个人，手里拎着早餐——吸血鬼的晨间拜访，是三百六十五次轮回里，他们第一次敢在白天按下你的门铃。`,
+      quote:"「时间能偷走三百六十四次记忆，但偷不走第三百六十五次的再见。」" },
+    { title:"HE · 猎人卧底的空白报告", text:()=>`最后一个反转属于你：你是猎人协会派来的卧底，任务代号「猎户座」，目标——记录血族罪证，伺机清除。<p><br>任务结束的那晚，你坐在办公桌前，报告模板已经填好：时间、地点、${MEMBER_NAMES}的全部行踪、弱点分析。光标停在最后一栏「处理建议」上，停留了整整一夜。<p><br>黎明时分，你按下提交键。协会收到的是一份空白报告，只有手写的一行附言：<p><br>「目标经查不存在。只有六个笨蛋和一桩不值得上报的心动。另：本人申请长期驻外——驻点：他们家。」<p><br>三个月后，猎人协会销案。而城市另一头的深夜聚会上，六个吸血鬼正围着一个人，听其一本正经地汇报："本周卧底成果——零。本周恋爱进度——"他们同时凑近了耳朵。`,
+      quote:"「我的枪口对准他们一百次，第一百零一次，我把它改成了伞。」" },
+  ],
+  be: [
+    { title:"BE · 永夜替身", text:()=>`结局来临的方式安静得残忍：他们没有咬你，没有伤害你，甚至没有说一句谎——他们只是太需要"你"了。<p><br>在古卷最后一页，你终于读懂了那个反复出现的词：「替身」。一百年前离开的那个人，留下的不只是回忆，还有一个空缺——血族之城的第七把椅子，永远虚位以待。他们找了一百年，不是在找那个人，而是在找"能坐上那把椅子的人"。<p><br>而你在最后一个选择里，亲手坐了上去。诅咒生效的瞬间非常温柔：你获得了永生、城堡、六份笨拙的爱，以及一个新身份——守夜人。你的第一个任务写在古卷上：<p><br>「等下一个像她/他的人，推开那扇门。」<p><br>一百年后，新的访客推门而入。你微笑着起身，说出了那句话——就是当年他们对你说过的那一句。你终于明白，这扇门后从来没有恋爱，只有一场循环了几个世纪的、温柔的接力。`,
+      quote:"「欢迎回来。我们等你，等了整整五十年。——这一次，这句话是你说的。」" },
+    { title:"BE · 日出的灰烬与戒指", text:()=>`灾难源于你编造的第一个善意谎言：「我不怕你们。真的。」</p><p>于是那一夜，当猎人协会的清剿队包围城堡时，${MEMBER_NAMES}做出了六个一模一样的决定：既然你说不怕，那就没必要躲。他们迎着黎明的第一缕光列队站好，用身体挡在你和猎人之间——不是为了战斗，而是为了证明给你看："看，我们连日出都不怕了。"<p><br>灰烬落满你的肩膀时，你手里只剩下六枚戒指，和一句没人接的"我说谎了"。<p><br>许多年后，你成了这座古堡的讲解员。每天闭馆前，你都会对着空荡的舞池说同一句话：<p><br>「日落了。回家吧。」<p><br>烛台会自己亮起来，十三根，一次不多，一次不少。`,
+      quote:"「他们赌你说的'不怕'是真心的。你赌的不是——这是你们唯一一次，都没有赢的赌局。」" },
+    { title:"BE · 落款1923", text:()=>`你逃出来了。真的逃出来了——这就是最恐怖的部分。<p><br>事后的每一项调查都完美自洽：你报了警，做了笔录，甚至看了心理医生。那栋"午夜办公室"确实存在——在档案里，它于1923年失火，六名死者，全员身份不明。那间教室的封条日期、血库的旧档案、舞会请柬的印刷年份、天台都市传说的最早记录……全部指向同一个年代：一百年前。<p><br>你开始新的生活，努力忘掉一切。直到某个加班的深夜，你在公司档案室帮忙整理旧物，翻出一本1923年的员工登记册。<p><br>第七行，是你的名字。入职日期：1923年6月1日。岗位：夜间档案员。担保人签名栏里，六个熟悉的笔迹排成一列。<p><br>你合上册子，抬头看见档案室的玻璃倒影里，六道苍白的身影站在你身后，最前面那位微笑着开口：<p><br>「档案员小姐/先生，你的年假——已经攒了一百年了。」`,
+      quote:"「时间从来不是你们的护身符。它只是他们最耐心的同谋。」" },
+    { title:"BE · 镜子里少了一个你", text:()=>`你赢到了最后。用智慧、用勇气、用每一次选择的正确答案，你从血族之城中全身而退——门在你身后关上，晨光洒在你身上。<p><br>可从那天起，怪事开始了。镜子里的你，慢半拍。你抬手，镜中人慢了0.5秒；你微笑，镜中人的笑意要迟一会儿才浮上来。第七天，镜中的你不笑了。第十四天，镜中的你转过头，看向了镜子外的、你身后没有人的地方。<p><br>第二十一天，你在镜子里收到了一封信。镜中世界信纸上的字迹属于${MEMBER_NAMES}中的一位：<p><br>「逃跑成功，恭喜。但按血族古法，逃出者需留下'等价之物'——你留下的是你的影子。别担心，它过得很好，我们六个也很照顾它。它现在坐在第七把椅子上，每天替你听我们唱歌。有空……回来看看你自己的影子吗？它想你了。它是这么说的。」<p><br>你望向窗外——晴朗的太阳下，你没有影子。`,
+      quote:"「你以为你逃出来了。其实你只是，把自己留在了那里一半。」" },
+  ],
+  tw: [
+    { title:"反转 · 棋盘与执棋人", text:()=>`结局揭晓的时刻，${MEMBER_NAMES}集体沉默了——因为他们发现，从第一页开始，猎物和猎人的位置就是反的。<p><br>你不是误入血族之城的普通人。你是这座城真正的执棋人：血族议会三方（吸血鬼、猎人协会、守夜人公会）僵持百年，而你，是唯一的"中立血裔"——三份血统各占三分之一，谁也不敢动你，谁都想要你。<p><br>这场"恋爱游戏"，从头到尾都是你布下的棋局：办公室的请柬、教室的粉笔字、血库消失的六袋血、天台的雨——全部是你的手笔，目的是逼六个各方势力的继承人坐到同一张桌子上，签下停战协议。<p><br>协议签署那晚，祯元看着你，忽然笑了：「所以从头到尾，就没有心动这回事吗？」你收起棋盘，认真想了想：<p><br>「有啊。只是我的心动，从来不用嘴说——它写在棋谱里。你复盘一下第几步，是我故意输给你的。」`,
+      quote:"「他们以为在追捕一只夜莺。其实夜莺在数：今晚，笼子里又多了几只笨蛋。」" },
+    { title:"反转 · 第七人的辞职信", text:()=>`最意想不到的结局：他们六个集体向你告白了——然后被你递过来的文件吓退了半步。<p><br>那是一份《永夜共同体第七席入职邀请函》，你已经填好了全部信息，只等他们签字确认。是的，在你做出那些"心动选择"的同时，你早就看穿了一切：血族的第七席空缺百年，他们找的从来不是恋人，而是"第七人"——议会体系里缺失的最后一票。<p><br>但你在邀请函的最后一页，自己加了一条附则：<p><br>「本人接受第七席职位。但根据血族劳动法（本人现编的），每周需有六个晚上进行非工作性质的相处，包括但不限于：跳舞、看日出（室内）、以及互相说真话。拒绝签署者，本人将去应聘猎人协会。」<p><br>六支笔同时落下。史上第一份带恋爱条款的族契，就此生效。`,
+      quote:"「爱情的最高形态，是把它写进合同里——并且让对方心甘情愿签字。」" },
+    { title:"反转 · 作者就是你", text:()=>`最后的最后，故事出现了一道裂缝——你发现每一章的旁白，用的都是你的语气；每一场雨，都下在你最崩溃的那天；每一个选项，都恰好通向你想去的地方。<p><br>因为这本小说，是你写的。<p><br>一百年前，你是一位落魄的连载作家，在人生最灰暗的那个雨夜，写下了《吸血鬼恋爱记》的第一章——然后你死了，死于那场暴雨。你的故事被血族之城捡到，你的六个角色因为写得太好，获得了血肉。他们花了整整一百年，把小说里的每个场景变成真的，只为在结局的那一页，复活他们的作者。<p><br>所以当${MEMBER_NAMES}齐声说出「欢迎回家」的时候，你终于想起来了：你不是这本书的主角——<p><br>你是把它写出来的人。而他们用了一百年告诉你：认真写下的每一个角色，都会拼命活成你想要的结局。<p><br>合上书页，窗外天亮了。这一次，是真正的日出。`,
+      quote:"「所有的角色都在书里等一个结局。而写书的人，值得一个回不去的、崭新的开始。」" },
+  ]
+};
+
+/* ===================== 状态 ===================== */
+let state = { mode:null, count:0, members:[], scene:null, round:0, score:0, usedQ:[] };
+let MEMBER_NAMES = "";
+
+/* ===================== 流程 ===================== */
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function pickMode(m){
+  state.mode = m; state.count = 0; state.members = [];
+  if(m==='single'){
+    document.getElementById('member-title').textContent = "第三章 · 选择与你共度永夜之人";
+    document.getElementById('member-hint').textContent = "六位绅士，六段截然不同的永夜。选择你的唯一。";
+    renderMembers(1);
+    go('screen-members');
+  } else {
+    renderCounts();
+    go('screen-count');
+  }
+}
+
+function renderCounts(){
+  const row = document.getElementById('count-row');
+  row.innerHTML = '';
+  for(let n=2;n<=6;n++){
+    const c = document.createElement('div');
+    c.className = 'count-chip';
+    c.textContent = n + ' 人';
+    c.onclick = ()=>{
+      row.querySelectorAll('.count-chip').forEach(x=>x.classList.remove('selected'));
+      c.classList.add('selected');
+      state.count = n;
+      setTimeout(()=>{ renderMembers(n); go('screen-members'); }, 300);
+    };
+    row.appendChild(c);
+  }
+}
+
+function renderMembers(limit){
+  state.members = [];
+  const grid = document.getElementById('member-grid');
+  const nextBtn = document.getElementById('member-next');
+  nextBtn.disabled = true;
+  if(limit>1){
+    document.getElementById('member-title').textContent = "第三章 · 点名你的午夜同行者";
+    document.getElementById('member-hint').textContent = `请选择 ${limit} 位成员（已选 0/${limit}）`;
+  }
+  grid.innerHTML='';
+  MEMBERS.forEach(m=>{
+    const card = document.createElement('div');
+    card.className='member-card';
+    card.innerHTML = `<div class="avatar" style="background:linear-gradient(135deg, ${m.color}, #6e0e1e);">${m.initial}</div>
+      <h3>${m.name}</h3><p>${m.trait}</p>`;
+    card.onclick = ()=>{
+      const idx = state.members.indexOf(m.id);
+      if(limit===1){
+        grid.querySelectorAll('.member-card').forEach(x=>x.classList.remove('selected'));
+        card.classList.add('selected');
+        state.members=[m.id];
+      } else {
+        if(idx>=0){ state.members.splice(idx,1); card.classList.remove('selected'); }
+        else {
+          if(state.members.length>=limit) return;
+          state.members.push(m.id); card.classList.add('selected');
+        }
+        document.getElementById('member-hint').textContent = `请选择 ${limit} 位成员（已选 ${state.members.length}/${limit}）`;
+      }
+      nextBtn.disabled = !(state.members.length===limit);
+    };
+    grid.appendChild(card);
+  });
+}
+
+function renderScenes(){
+  const list = document.getElementById('scene-list');
+  list.innerHTML='';
+  SCENES.forEach(sc=>{
+    const card = document.createElement('div');
+    card.className='scene-card';
+    card.innerHTML = `<div class="icon">${sc.icon}</div><div><h3>${sc.name}</h3><p>${sc.desc}</p></div>`;
+    card.onclick = ()=>{
+      list.querySelectorAll('.scene-card').forEach(x=>x.classList.remove('selected'));
+      card.classList.add('selected');
+      state.scene = sc;
+      setTimeout(startStory, 350);
+    };
+    list.appendChild(card);
+  });
+}
+
+function startStory(){
+  state.round = 0; state.score = 0; state.usedQ = [];
+  const names = state.members.map(id=>MEMBERS.find(m=>m.id===id).name).join('、');
+  MEMBER_NAMES = names;
+  document.getElementById('story-scene-name').textContent = `◈ 场景：${state.scene.name}`;
+  document.getElementById('story-scene-art').textContent = state.scene.art;
+  document.getElementById('story-opening').innerHTML =
+    `<p class="narrative">${state.scene.bg(names)}</p>` +
+    (state.mode==='single'
+      ? `<p class="narrative">在这一整夜里，你的身边只有<span class="who">${names}</span>一个人。夜风穿过窗缝，故事，从你们四目相对的那一刻开始。</p>`
+      : `<p class="narrative">在这场邀约里，${names}——所有人都在看着你。而这，只是今晚的第一个陷阱。</p>`);
+  go('screen-story');
+  setTimeout(nextQuestion, 1200);
+}
+
+function nextQuestion(){
+  const qs = QUESTIONS[state.scene.id];
+  if(state.round >= 4){ showEnding(); return; }
+  state.round++;
+  document.getElementById('round-num').textContent = state.round;
+  document.getElementById('progress-fill').style.width = (state.round/4*100)+'%';
+  document.getElementById('score-num').textContent = state.score;
+
+  const pool = qs.filter((_,i)=>!state.usedQ.includes(i));
+  const q = pool[Math.floor(Math.random()*pool.length)];
+  state.usedQ.push(qs.indexOf(q));
+
+  const box = document.getElementById('question-box');
+  box.innerHTML = `<h3>🕯️ ${q.q}</h3>`;
+  const opts = [...q.opts].sort(()=>Math.random()-.5);
+  opts.forEach(o=>{
+    const btn = document.createElement('button');
+    btn.className='choice';
+    btn.innerHTML = `<span class="tag">◆</span>${o.t}`;
+    btn.onclick = ()=>{
+      state.score += o.s;
+      box.innerHTML = `<div class="question-box"><h3>📖 ${o.r}</h3></div>
+        <div class="actions"><button class="btn small" onclick="nextQuestion()">继续 · 进入下一幕 →</button></div>`;
+      document.getElementById('score-num').textContent = state.score;
+      window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
+    };
+    box.appendChild(btn);
+  });
+  window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
+}
+
+function showEnding(){
+  let pool, badge;
+  if(state.score >= 6){ pool = ENDINGS.he; badge = ['HE · 好 结 局','he']; }
+  else if(state.score <= 1){ pool = ENDINGS.be; badge = ['BE · 坏 结 局','be']; }
+  else { pool = ENDINGS.tw; badge = ['!? · 隐 藏 反 转','tw']; }
+  const e = pool[Math.floor(Math.random()*pool.length)];
+  document.getElementById('ending-badge').textContent = badge[0];
+  document.getElementById('ending-badge').className = 'ending-badge ' + badge[1];
+  document.getElementById('ending-title').textContent = e.title;
+  document.getElementById('ending-text').innerHTML = e.text();
+  document.getElementById('ending-quote').textContent = e.quote;
+  go('screen-ending');
+}
+
+function restart(){
+  state = { mode:null, count:0, members:[], scene:null, round:0, score:0, usedQ:[] };
+  go('screen-title');
+}
+
+renderScenes();
+</script>
+</body>
+</html>
